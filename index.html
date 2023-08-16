@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xCodeClazz | Code Parser</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.3.slim.min.js"
+        integrity="sha256-ZwqZIVdD3iXNyGHbSYdsmWP//UBokj2FHAxKuSBKDSo=" crossorigin="anonymous"></script>
+
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.esm.js"></script>
+    <script nomodule src="https://cdn.jsdelivr.net/npm/@ionic/core/dist/ionic/ionic.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ionic/core/css/ionic.bundle.css" />
+
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/tokyo-night-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+
+    <!-- and it's easy to individually load additional languages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/cpp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/languages/c.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- <link rel="stylesheet" href="./css.tailwind.com-3.3.0.css"> -->
+    <style>
+        *::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <script>
+        const languages = {
+            Javascript: 'Javascript',
+            Python: 'Python',
+            Java: 'Java',
+            Cpp: 'Cpp',
+            C: 'C',
+        }
+    </script>
+</head>
+
+<body onload="listeners()">
+    <ion-app>
+        <section class="h-screen">
+            <ion-header hidden>
+                <ion-toolbar color="dark">
+                    <ion-title color="warning">xCodeClazz</ion-title>
+                    <ion-buttons slot="end">
+                        <ion-button disabled>
+                            <ion-icon icon="code" slot="icon-only" />
+                        </ion-button>
+                    </ion-buttons>
+                </ion-toolbar>
+            </ion-header>
+            <ion-content color="dark" class="ion-padding" fullscreen>
+                <section class="flex flex-col space-y-2 overflow-scroll p-2">
+                    <div class="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
+                        <div class="p-2 self-center">
+                            <ion-radio-group value="Java" id="languages-rb">
+                                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-5 gap-2">
+                                    <div class="flex items-center space-x-2">
+                                        <ion-radio aria-label="Java" label="java" color="primary"
+                                            value="Java"></ion-radio>
+                                        <strong>Java</strong>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <ion-radio color="success" aria-label="" label="python"
+                                            value="Python"></ion-radio>
+                                        <strong>Python</strong>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <ion-radio color="warning" aria-label="" label="js"
+                                            value="Javascript"></ion-radio>
+                                        <strong>Javascript</strong>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <ion-radio color="danger" aria-label="" label="c" value="C"></ion-radio>
+                                        <strong>C Lang</strong>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <ion-radio color="tertiary" aria-label="" label="c++" value="Cpp"></ion-radio>
+                                        <strong>Cpp</strong>
+                                    </div>
+                                </div>
+                            </ion-radio-group>
+                        </div>
+                        <div class="p-2"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-2">
+                        <textarea class="p-2 rounded-lg bg-[#1A1B26] text-white text-lg" style="resize: none;"
+                            spellcheck="false" id="textbox" rows="15" placeholder="Write your code here..."></textarea>
+                        <pre
+                            class="rounded-lg"><code id="output-code" class="text-lg h-full">// Write your code here...</code></pre>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-2">
+                        <ion-button color="dark" style="text-transform: lowercase;" id="json-btn">
+                            <ion-label color="warning">JSON.stringify()</ion-label>
+                            <ion-icon color="warning" slot="start" icon="document" />
+                        </ion-button>
+                    </div>
+                </section>
+            </ion-content>
+        </section>
+    </ion-app>
+    <script>
+        let currentLanguage = languages.Java;
+        let source = ``;
+
+        function listeners() {
+            const btn = document.getElementById('json-btn');
+            const rbs = document.getElementById('languages-rb');
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const son = JSON.stringify(source);
+                copyToClipboard(son);
+            });
+            rbs.addEventListener('ionChange', function (e) {
+                if (Object.keys(languages).includes(currentLanguage)) {
+                    currentLanguage = e.target.value;
+                    output(source, currentLanguage);
+                }
+            });
+
+            $('#textbox').on('keydown', function (e) {
+                var field = $(this);
+                if (e.key == 'Tab') {
+                    e.preventDefault();
+                    setTimeout(() => {
+                        var start = this.selectionStart;
+                        var end = this.selectionEnd;
+                        this.value = this.value.substring(0, start) + "\t" + this.value.substring(end);
+                        this.selectionStart = this.selectionEnd = start + 1;
+                        source = this.value;
+                    }, 0);
+                }
+                setTimeout(() => {
+                    source = this.value;
+                    output(this.value, currentLanguage);
+                }, 0);
+            });
+
+        }
+        function output(text = '', language = currentLanguage) {
+            const _console = document.getElementById('output-code');
+            if (language == languages.C) _console.className = 'language-c text-lg h-full';
+            else if (language == languages.Cpp) _console.className = 'language-cpp text-lg h-full';
+            else if (language == languages.Java) _console.className = 'language-java text-lg h-full';
+            else if (language == languages.Python) _console.className = 'language-python text-lg h-full';
+            else if (language == languages.Javascript) _console.className = 'language-javascript text-lg h-full';
+            _console.innerHTML = text;
+            hljs.highlightAll();
+        }
+        hljs.highlightAll();
+    </script>
+    <script>
+        // Copies a string to the clipboard. Must be called from within an
+        // event handler such as click. May return false if it failed, but
+        // this is not always possible. Browser support for Chrome 43+,
+        // Firefox 42+, Safari 10+, Edge and Internet Explorer 10+.
+        // Internet Explorer: The clipboard feature may be disabled by
+        // an administrator. By default a prompt is shown the first
+        // time the clipboard is used (per session).
+        function copyToClipboard(text) {
+            if (window.clipboardData && window.clipboardData.setData) {
+                // Internet Explorer-specific code path to prevent textarea being shown while dialog is visible.
+                return window.clipboardData.setData("Text", text);
+
+            }
+            else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
+                var textarea = document.createElement("textarea");
+                textarea.textContent = text;
+                textarea.style.position = "fixed";  // Prevent scrolling to bottom of page in Microsoft Edge.
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    return document.execCommand("copy");  // Security exception may be thrown by some browsers.
+                }
+                catch (ex) {
+                    console.warn("Copy to clipboard failed.", ex);
+                    return prompt("Copy to clipboard: Ctrl+C, Enter", text);
+                }
+                finally {
+                    document.body.removeChild(textarea);
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
